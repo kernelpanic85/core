@@ -1,4 +1,6 @@
 """Test fixtures for voice assistant."""
+from __future__ import annotations
+
 from collections.abc import AsyncIterable
 from typing import Any
 from unittest.mock import AsyncMock, Mock
@@ -12,8 +14,9 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 from homeassistant.setup import async_setup_component
 
-from tests.common import MockModule, mock_integration, mock_platform
+from tests.common import MockModule, MockPlatform, mock_integration, mock_platform
 from tests.components.tts.conftest import (  # noqa: F401, pylint: disable=unused-import
+    init_cache_dir_side_effect,
     mock_get_cache_files,
     mock_init_cache_dir,
 )
@@ -28,7 +31,7 @@ class MockSttProvider(stt.Provider):
         """Init test provider."""
         self.hass = hass
         self.text = text
-        self.received = []
+        self.received: list[bytes] = []
 
     @property
     def supported_languages(self) -> list[str]:
@@ -98,7 +101,7 @@ class MockTTSProvider(tts.Provider):
         return ("mp3", b"")
 
 
-class MockTTS:
+class MockTTS(MockPlatform):
     """A mock TTS platform."""
 
     PLATFORM_SCHEMA = tts.PLATFORM_SCHEMA
@@ -114,7 +117,7 @@ class MockTTS:
 
 
 @pytest.fixture
-async def mock_stt_provider(hass) -> MockSttProvider:
+async def mock_stt_provider(hass: HomeAssistant) -> MockSttProvider:
     """Mock STT provider."""
     return MockSttProvider(hass, _TRANSCRIPT)
 
@@ -123,8 +126,9 @@ async def mock_stt_provider(hass) -> MockSttProvider:
 async def init_components(
     hass: HomeAssistant,
     mock_stt_provider: MockSttProvider,
+    init_cache_dir_side_effect,  # noqa: F811
     mock_get_cache_files,  # noqa: F811
-    mock_init_cache_dir,  # noqa: F811,
+    mock_init_cache_dir,  # noqa: F811
 ):
     """Initialize relevant components with empty configs."""
     mock_integration(hass, MockModule(domain="test"))
